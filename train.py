@@ -24,7 +24,7 @@ from utils.general_utils import safe_state
 import cv2
 import uuid
 from tqdm import tqdm
-from utils.image_utils import psnr, erode, normalize
+from utils.image_utils import psnr, erode, normalize, get_gradient
 from argparse import ArgumentParser, Namespace
 from arguments import ModelParams, PipelineParams, OptimizationParams
 from scene.app_model import AppModel
@@ -211,12 +211,14 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
             weight = opt.dn_weight
             depth = normalize(1 / (render_pkg["plane_depth"] + 0.5))
             mono_invdepth = normalize(1 / (viewpoint_cam.invdepthmap.cuda() + 0.5))
-            Ll1depth_pure = torch.abs(mono_invdepth  - depth).mean()
+            
+            depth_grad = get_gradient(depth)
+            mono_invdepth_grad = get_gradient(mono_invdepth)
+            
+            Ll1depth_pure = 1.0 - ssim(depth_grad.unsqueeze(0), mono_invdepth_grad.unsqueeze(0))
             loss += Ll1depth_pure * weight
-            # LSimDepth = ssim(depth, mono_invdepth)
-            # loss += weight * (0.5 * LSimDepth + 0.5 * Ll1depth_pure)
-            debug_tensor["plane_depth"] = depth
-            debug_tensor["invdepthmap"] = mono_invdepth
+            debug_tensor["depth_grad"] = depth_grad
+            debug_tensor["mono_invdepth_grad"] = mono_invdepth_grad
 
         # multi-view loss
         if iteration > opt.multi_view_weight_from_iter:
@@ -357,8 +359,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
             debug_tensor_path = args.debug_tensor
             if not os.path.exists(debug_tensor_path):
                 raise FileNotFoundError(f"cannot found path: '{debug_tensor_path}'")
-            save_list = ["render", "rendered_normal", "depth_normal", "plane_depth", "invdepthmap"]
-            for key in save_list:
+            for key in debug_tensor.keys():
                 try:
                     torch.save(debug_tensor[key], os.path.join(debug_tensor_path, key + ".pt"))
                 except KeyError:

@@ -32,3 +32,25 @@ def erode(bin_img, ksize=5):
 def normalize(img):
     img = (img - img.min()) / (img.max() - img.min())
     return img
+
+epsilon = 1e-6 
+def get_gradient(image : torch.Tensor) -> torch.Tensor:
+    
+    sobel_x = torch.tensor([[-1, 0, 1], 
+                            [-2, 0, 2], 
+                            [-1, 0, 1]], dtype=torch.float32).unsqueeze(0).unsqueeze(0).cuda()
+
+    sobel_y = torch.tensor([[-1, -2, -1], 
+                            [ 0,  0,  0], 
+                            [ 1,  2,  1]], dtype=torch.float32).unsqueeze(0).unsqueeze(0).cuda()
+    
+    image_copy = image.clone()
+    
+    grad_x = F.conv2d(image_copy, sobel_x, padding=1)
+    grad_y = F.conv2d(image_copy, sobel_y, padding=1)
+    
+    grad_magnitude = torch.sqrt(grad_x ** 2 + grad_y ** 2 + epsilon)
+    grad_magnitude = torch.sqrt(grad_magnitude)
+    grad_magnitude = torch.sqrt(grad_magnitude)
+    
+    return grad_magnitude.squeeze(0)
