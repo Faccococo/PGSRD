@@ -16,15 +16,17 @@ import random
 import numpy as np
 from random import randint
 from utils.loss_utils import l1_loss, ssim, lncc, get_img_grad_weight
-from utils.graphics_utils import patch_offsets, patch_warp
+from utils.graphics_utils import patch_offsets, patch_warp, normal_from_depth_image
 from gaussian_renderer import render, network_gui
 import sys, time
 from scene import Scene, GaussianModel
 from utils.general_utils import safe_state
 import cv2
 import uuid
+import json
 from tqdm import tqdm
-from utils.image_utils import psnr, erode, normalize
+from utils.image_utils import psnr, erode, normalize, normalize_rgb, mean_filter
+from utils.general_utils import get_expon_lr_func
 from argparse import ArgumentParser, Namespace
 from arguments import ModelParams, PipelineParams, OptimizationParams
 from scene.app_model import AppModel
@@ -144,6 +146,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
         #         network_gui.conn = None
         
         debug_tensor = {}
+        debug_loss = {}
 
         iter_start.record()
         gaussians.update_learning_rate(iteration)
@@ -201,22 +204,49 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                 normal_loss = weight * (image_weight * (((depth_normal - normal)).abs().sum(0))).mean()
             else:
                 normal_loss = weight * (((depth_normal - normal)).abs().sum(0)).mean()
-            loss += (normal_loss)      
+            loss += (normal_loss)
             
             debug_tensor["rendered_normal"] = normal
             debug_tensor["depth_normal"] = depth_normal
             
-        # DN-loss
-        if iteration > opt.single_view_weight_from_iter and viewpoint_cam.depth_reliable:
-            weight = opt.dn_weight
-            depth = normalize(1 / (render_pkg["plane_depth"] + 0.5))
-            mono_invdepth = normalize(1 / (viewpoint_cam.invdepthmap.cuda() + 0.5))
-            Ll1depth_pure = torch.abs(mono_invdepth  - depth).mean()
-            loss += Ll1depth_pure * weight
-            # LSimDepth = ssim(depth, mono_invdepth)
+        # dn_l1_weight = opt.dn_weight
+        dn_l1_weight = get_expon_lr_func(opt.dn_l1_weight_init, opt.dn_l1_weight_final, max_steps=opt.iterations)(iteration)
+        
+        if iteration > opt.single_view_weight_from_iter and viewpoint_cam.depth_reliable and dn_l1_weight > 0:
+            depth_weight = dn_l1_weight * 30
+            normal_weight = dn_l1_weight / 2
+            
+            depth_metric = viewpoint_cam.invdepthmap.cuda()
+                        
+            # LSimDepth = (1.0 - ssim(depth, mono_invdepth))
             # loss += weight * (0.5 * LSimDepth + 0.5 * Ll1depth_pure)
+            
+            # Normal-loss
+            intrinsic_matrix, extrinsic_matrix = viewpoint_cam.get_calib_matrix_nerf(scale=1.0)
+            depth_normal_gt = normal_from_depth_image(depth_metric.squeeze(), intrinsic_matrix.cuda(), extrinsic_matrix.cuda()).permute(2, 0, 1)            
+            
+            rendered_normal = render_pkg["rendered_normal"]
+            normal_loss_rendered = (((rendered_normal - depth_normal_gt)).abs().sum(0)).mean()
+            
+            depth_normal = render_pkg["depth_normal"]
+            normal_loss_depth = (((depth_normal - depth_normal_gt)).abs().sum(0)).mean()
+            
+            loss += normal_weight * (normal_loss_rendered + normal_loss_depth)
+            
+            # Depth-loss
+            debug_tensor["normal"] = depth_normal_gt
+            debug_loss["normal_loss"] = normal_loss.item()
+            depth = normalize(render_pkg["plane_depth"])
+            depth_metric_norm = normalize(depth_metric)
+            depth_loss = depth_weight * l1_loss(depth, depth_metric_norm)
+            loss += depth_loss
+                
+            debug_loss["depth_loss"] = depth_loss.item()
+            
             debug_tensor["plane_depth"] = depth
-            debug_tensor["invdepthmap"] = mono_invdepth
+            debug_tensor["depth_metric"] = depth_metric_norm
+            
+                
 
         # multi-view loss
         if iteration > opt.multi_view_weight_from_iter:
@@ -357,12 +387,15 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
             debug_tensor_path = args.debug_tensor
             if not os.path.exists(debug_tensor_path):
                 raise FileNotFoundError(f"cannot found path: '{debug_tensor_path}'")
-            save_list = ["render", "rendered_normal", "depth_normal", "plane_depth", "invdepthmap"]
-            for key in save_list:
+            for key in debug_tensor.keys():
                 try:
                     torch.save(debug_tensor[key], os.path.join(debug_tensor_path, key + ".pt"))
                 except KeyError:
                     pass
+            with open(os.path.join(args.debug_tensor, "loss.json"), "w") as file:
+                json.dump(debug_loss, file, indent=4, ensure_ascii=False)
+            
+            
             
         loss.backward()
         iter_end.record()
