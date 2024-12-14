@@ -17,6 +17,7 @@ import numpy as np
 from random import randint
 from utils.loss_utils import l1_loss, ssim, lncc, get_img_grad_weight
 from utils.graphics_utils import patch_offsets, patch_warp, normal_from_depth_image
+from utils.graphics_utils import patch_offsets, patch_warp, normal_from_depth_image
 from gaussian_renderer import render, network_gui
 import sys, time
 from scene import Scene, GaussianModel
