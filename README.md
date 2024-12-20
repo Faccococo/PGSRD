@@ -1,3 +1,8 @@
+# Updates:
+1. Adding depth regularization to the Planar-based Gaussian Splatting Reconstruction (PGSR) framework, based on Kerbls et al. [github](https://github.com/graphdeco-inria/gaussian-splatting/tree/dev?tab=readme-ov-file#depth-regularization)
+2. Using [Depth Pro](https://github.com/apple/ml-depth-pro) as depth estimation.
+2. Adding normal regularization, genrated from depth map estimated by Depth Pro.
+
 # PGSR: Planar-based Gaussian Splatting for Efficient and High-Fidelity Surface Reconstruction
 Danpeng Chen, Hai Li, [Weicai Ye](https://ywcmaike.github.io/), Yifan Wang, Weijian Xie, Shangjin Zhai, Nan Wang, Haomin Liu, Hujun Bao, [Guofeng Zhang](http://www.cad.zju.edu.cn/home/gfzhang/)
 ### [Project Page](https://zju3dv.github.io/pgsr/) | [arXiv](https://arxiv.org/abs/2406.06521)
@@ -109,7 +114,7 @@ Two preprocessing steps are required to enable depth regularization when trainin
   To have better reconstructed scenes we use depth maps as priors during optimization with each input images. It works best on untextured parts ex: roads and can remove floaters. Several papers have used similar ideas to improve various aspects of 3DGS; (e.g. [DepthRegularizedGS](https://robot0321.github.io/DepthRegGS/index.html), [SparseGS](https://formycat.github.io/SparseGS-Real-Time-360-Sparse-View-Synthesis-using-Gaussian-Splatting/), [DNGaussian](https://fictionarry.github.io/DNGaussian/)). The depth regularization we integrated is that used in our [Hierarchical 3DGS](https://repo-sam.inria.fr/fungraph/hierarchical-3d-gaussians/) paper, but applied to the original 3DGS; for some scenes (e.g., the DeepBlending scenes) it improves quality significantly; for others it either makes a small difference or can even be worse. For details statistics please see here: [Stats for depth regularization](results.md).
 
 When training on a synthetic dataset, depth maps can be produced and they do not require further processing to be used in our method. For real world datasets please do the following: 
-1. Get depth maps for each input images, to this effect we suggest using [Depth anything v2](https://github.com/DepthAnything/Depth-Anything-V2?tab=readme-ov-file#usage).
+1. Get depth maps for each input images, to this effect we suggest using [Depth Pro](https://github.com/apple/ml-depth-pro).
 2. Generate a `depth_params.json` file using:
     ```
     python utils/make_depth_scale.py --base_dir <path to colmap> --depths_dir <path to generated depths>
