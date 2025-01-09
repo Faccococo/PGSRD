@@ -12,10 +12,10 @@ def init_colmap(args):
     scene_list = os.listdir(args.data_path)
     for scene in scene_list:
         scene_path = os.path.join(args.data_path, scene)
-        os.makedirs(scene_path + "/sparse", exist_ok=True)
+        os.makedirs(scene_path + "/sparse/0", exist_ok=True)
 
         os.system(f"rm -rf {scene_path}/images/*")
-        os.system(f"rm -rf {scene_path}/sparse/*")
+        os.system(f"rm -rf {scene_path}/sparse/0/*")
         os.system(f"rm {scene_path}/database.db")
 
         ## Feature extraction
@@ -45,7 +45,7 @@ def init_colmap(args):
         mapper_cmd = (colmap_command + " mapper \
             --database_path " + scene_path + "/database.db \
             --image_path "  + scene_path + "/input \
-            --output_path "  + scene_path + "/sparse \
+            --output_path "  + scene_path + "/sparse/0 \
             --Mapper.ba_global_function_tolerance=0.000001")
         exit_code = os.system(mapper_cmd) 
         if exit_code != 0:
@@ -55,15 +55,15 @@ def init_colmap(args):
         files = os.listdir(scene_path + "/sparse/0")
         # Copy each file from the source directory to the destination directory
         for file in files:
-            destination_file = os.path.join(scene_path, "sparse", file)
-            source_file = os.path.join(scene_path, "sparse", "0", file)
+            destination_file = os.path.join(scene_path, "sparse/0", file)
+            source_file = os.path.join(scene_path, "sparse/0", "0", file)
             shutil.move(source_file, destination_file)
 
         ### Image undistortion
         ## We need to undistort our images into ideal pinhole intrinsics.
         img_undist_cmd = (colmap_command + " image_undistorter \
             --image_path " + scene_path + "/input \
-            --input_path " + scene_path + "/sparse \
+            --input_path " + scene_path + "/sparse/0 \
             --output_path " + scene_path + "\
             --output_type COLMAP")
         exit_code = os.system(img_undist_cmd)

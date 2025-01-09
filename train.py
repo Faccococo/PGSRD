@@ -240,7 +240,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
             debug_tensor["normal"] = depth_normal_gt
             
             # Depth-loss
-            depth = render_pkg["plane_depth"]
+            depth = 1.0 / (render_pkg["plane_depth"] + 0.5)
             min_non_zero = depth[depth != 0].min()
             depth[depth == 0] = min_non_zero
             depth = normalize(depth)
@@ -402,8 +402,6 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                     pass
             with open(os.path.join(args.debug_tensor, "loss.json"), "w") as file:
                 json.dump(debug_loss, file, indent=4, ensure_ascii=False)
-            
-            
             
         loss.backward()
         iter_end.record()

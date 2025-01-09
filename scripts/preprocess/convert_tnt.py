@@ -201,27 +201,27 @@ def init_colmap(args):
         convert_cam_dict_to_pinhole_dict(poses, pinhole_dict_file)
 
         db_file = os.path.join(scene_path, 'database.db')
-        sfm_dir = os.path.join(scene_path, 'sparse')
+        sfm_dir = os.path.join(scene_path, 'sparse/0')
         create_init_files(pinhole_dict_file, db_file, sfm_dir)
 
         # bundle adjustment
         os.system(f"colmap point_triangulator \
                 --database_path {scene_path}/database.db \
                 --image_path {scene_path}/images_raw \
-                --input_path {scene_path}/sparse \
-                --output_path {scene_path}/sparse \
+                --input_path {scene_path}/sparse/0 \
+                --output_path {scene_path}/sparse/0 \
                 --Mapper.tri_ignore_two_view_tracks=true"
                   )
         os.system(f"colmap bundle_adjuster \
-                --input_path {scene_path}/sparse \
-                --output_path {scene_path}/sparse \
+                --input_path {scene_path}/sparse/0 \
+                --output_path {scene_path}/sparse/0 \
                 --BundleAdjustment.refine_extrinsics=false"
                   )
 
         # undistortion
         os.system(f"colmap image_undistorter \
             --image_path {scene_path}/images_raw \
-            --input_path {scene_path}/sparse \
+            --input_path {scene_path}/sparse/0 \
             --output_path {scene_path} \
             --output_type COLMAP "
                   )
@@ -234,7 +234,7 @@ def init_colmap(args):
         center, radius, bounding_box = compute_bound(pts_aligned[::100])
 
         # colmap to json
-        cameras, images, points3D = read_model(os.path.join(args.tnt_path, scene, 'sparse'), ext='.bin')
+        cameras, images, points3D = read_model(os.path.join(args.tnt_path, scene, 'sparse/0'), ext='.bin')
         export_to_json(cameras, images, bounding_box, list(center), radius, os.path.join(scene_path, 'transforms.json'))
         print('Writing data to json file: ', os.path.join(scene_path, 'transforms.json'))
 

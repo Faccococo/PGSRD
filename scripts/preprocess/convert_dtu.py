@@ -126,7 +126,7 @@ def dtu_to_json(args):
             continue
         
         os.system(f"rm -rf {scene_path}/images/*")
-        os.system(f"rm -rf {scene_path}/sparse/*")
+        os.system(f"rm -rf {scene_path}/sparse/0/*")
         os.system(f"rm {scene_path}/database.db")
         # exit()
 
@@ -181,27 +181,27 @@ def dtu_to_json(args):
         with open(pinhole_dict_file, 'w') as fp:
             json.dump(pinhole_dict, fp, indent=2, sort_keys=True)
         db_file = os.path.join(scene_path, 'database.db')
-        sfm_dir = os.path.join(scene_path, 'sparse')
+        sfm_dir = os.path.join(scene_path, 'sparse/0')
         create_init_files(pinhole_dict_file, db_file, sfm_dir)
         
         # bundle adjustment
         os.system(f"colmap point_triangulator \
                 --database_path {scene_path}/database.db \
                 --image_path {scene_path}/image \
-                --input_path {scene_path}/sparse \
-                --output_path {scene_path}/sparse \
+                --input_path {scene_path}/sparse/0 \
+                --output_path {scene_path}/sparse/0 \
                 --Mapper.tri_ignore_two_view_tracks=true"
                   )
         os.system(f"colmap bundle_adjuster \
-                --input_path {scene_path}/sparse \
-                --output_path {scene_path}/sparse \
+                --input_path {scene_path}/sparse/0 \
+                --output_path {scene_path}/sparse/0 \
                 --BundleAdjustment.refine_extrinsics=true"
                   )
 
         # undistortion
         os.system(f"colmap image_undistorter \
             --image_path {scene_path}/image \
-            --input_path {scene_path}/sparse \
+            --input_path {scene_path}/sparse/0 \
             --output_path {scene_path} \
             --output_type COLMAP"
                   )

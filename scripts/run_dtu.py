@@ -12,7 +12,7 @@ for scene in scenes:
     print(cmd)
     os.system(cmd)
 
-    cmd = f'cp -rf {data_base_path}/scan{scene}/sparse/0/* {data_base_path}/scan{scene}/sparse/'
+    cmd = f'cp -rf {data_base_path}/scan{scene}/sparse/0/* {data_base_path}/scan{scene}/sparse/0/'
     print(cmd)
     os.system(cmd)
 

@@ -55,7 +55,7 @@ def read_extrinsics(args : ArgumentParser):
         train_test_split = json.load(open(split_file))
         train_list = train_test_split["train"]
         test_list = train_test_split["test"]
-    extrinsics = read_extrinsics_binary(os.path.join(args.model, "sparse/images.bin"))
+    extrinsics = read_extrinsics_binary(os.path.join(args.model, "sparse/0/images.bin"))
     if train_test_split is not None:
         # get those partern in extrinsics which name in test_list
         test_extrinsics_idx = [extrinsic for extrinsic in extrinsics if extrinsics[extrinsic].name.split(".")[0] in test_list]
@@ -100,7 +100,7 @@ if __name__ == "__main__":
     mesh = pyrender.Mesh.from_trimesh(mesh)
     scene.add(mesh)
 
-    intrinsics = read_intrinsics_binary(os.path.join(args.model, "sparse/cameras.bin"))
+    intrinsics = read_intrinsics_binary(os.path.join(args.model, "sparse/0/cameras.bin"))
     camera = get_camera(intrinsics[1], resolution=1)
     
     camera_node = scene.add(camera)

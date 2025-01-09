@@ -188,7 +188,7 @@ def export_to_json(cameras, images, bounding_box, center, radius, file_path):
 
 
 def data_to_json(args):
-    cameras, images, points3D = read_model(os.path.join(args.data_dir, "sparse"), ext=".bin")
+    cameras, images, points3D = read_model(os.path.join(args.data_dir, "sparse/0"), ext=".bin")
 
     # define bounding regions based on scene type
     if args.scene_type == "outdoor":

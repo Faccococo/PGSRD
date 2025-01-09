@@ -55,11 +55,11 @@ def read_mapping(filename):
     return [n_sampled_frames, n_total_frames, mapping]
 
 
-def gen_sparse_trajectory(mapping, f_trajectory):
-    sparse_traj = []
+def gen_sparse/0_trajectory(mapping, f_trajectory):
+    sparse/0_traj = []
     for m in mapping:
-        sparse_traj.append(f_trajectory[int(m[1] - 1)])
-    return sparse_traj
+        sparse/0_traj.append(f_trajectory[int(m[1] - 1)])
+    return sparse/0_traj
 
 
 def trajectory_alignment(map_file, traj_to_register, gt_traj_col, gt_trans,
@@ -76,7 +76,7 @@ def trajectory_alignment(map_file, traj_to_register, gt_traj_col, gt_trans,
     # every movie frame (see tutorial for details)
     if len(traj_to_register) > 1600:
         n_sampled_frames, n_total_frames, mapping = read_mapping(map_file)
-        traj_col2 = gen_sparse_trajectory(mapping, traj_to_register)
+        traj_col2 = gen_sparse/0_trajectory(mapping, traj_to_register)
         traj_to_register_pcd = convert_trajectory_to_pointcloud(traj_col2)
     else:
         traj_to_register_pcd = convert_trajectory_to_pointcloud(
