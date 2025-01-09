@@ -115,10 +115,7 @@ Two preprocessing steps are required to enable depth regularization when trainin
 
 When training on a synthetic dataset, depth maps can be produced and they do not require further processing to be used in our method. For real world datasets please do the following: 
 1. Get depth maps for each input images, to this effect we suggest using [Depth Pro](https://github.com/apple/ml-depth-pro).
-2. Generate a `depth_params.json` file using:
-    ```
-    python utils/make_depth_scale.py --base_dir <path to colmap> --depths_dir <path to generated depths>
-    ```
+2. train the model via parameters `-d <path to depth maps>`.
 
 A new parameter should be set when training if you want to use depth regularization `-d <path to depth maps>`.
 

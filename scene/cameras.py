@@ -33,8 +33,8 @@ def process_image(image_path, depth_path, resolution, ncc_scale):
     image = Image.open(image_path)
     if depth_path != "":
         try:
-            # invdepthmap = cv2.imread(depth_path, -1).astype(np.float32) / float(2**16)
-            invdepthmap = torch.load(depth_path, weights_only=True).cpu().numpy()
+            invdepthmap = cv2.imread(depth_path, -1).astype(np.float32) / float(2**16)
+            # invdepthmap = torch.load(depth_path, weights_only=True).cpu().numpy()
         except FileNotFoundError:
             print(f"Error: The depth file at path '{depth_path}' was not found.")
             raise
@@ -68,7 +68,7 @@ def process_image(image_path, depth_path, resolution, ncc_scale):
     return gt_image, gray_image, loaded_mask, depth_image
 
 class Camera(nn.Module):
-    def __init__(self, colmap_id, R, T, FoVx, FoVy, depth_params,
+    def __init__(self, colmap_id, R, T, FoVx, FoVy,
                  image_width, image_height,
                  image_path, depth_path, image_name, uid,
                  trans=np.array([0.0, 0.0, 0.0]), scale=1.0, 
@@ -112,13 +112,6 @@ class Camera(nn.Module):
                 self.invdepthmap = inv_depth_image
                 self.invdepthmap[self.invdepthmap < 0] = 0
                 self.depth_reliable = True
-
-                if depth_params is not None:
-                    if depth_params["scale"] < 0.2 * depth_params["med_scale"] or depth_params["scale"] > 5 * depth_params["med_scale"]:
-                        self.depth_reliable = False
-                    
-                    if depth_params["scale"] > 0:
-                        self.invdepthmap = self.invdepthmap * depth_params["scale"] + depth_params["offset"]
 
                 self.invdepthmap = self.invdepthmap.to(self.data_device)
 
