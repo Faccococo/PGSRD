@@ -33,9 +33,8 @@ def process_image(image_path, depth_path, resolution, ncc_scale):
     image = Image.open(image_path)
     if depth_path != "":
         try:
-            depthmap = cv2.imread(depth_path, -1).astype(np.float32) / 1000
-            invdepthmap = 1.0 / (depthmap + 0.5)
-            # invdepthmap = torch.load(depth_path, weights_only=True).cpu().numpy()
+            depth_map = cv2.imread(depth_path, -1).astype(np.float32) / 1000
+            # depth_map = torch.load(depth_path, weights_only=True).cpu().numpy()
         except FileNotFoundError:
             print(f"Error: The depth file at path '{depth_path}' was not found.")
             raise
@@ -46,7 +45,7 @@ def process_image(image_path, depth_path, resolution, ncc_scale):
             print(f"An unexpected error occurred when trying to read depth at {depth_path}: {e}")
             raise
     else:
-        invdepthmap = None
+        depth_map = None
         
     if len(image.split()) > 3:
         resized_image_rgb = torch.cat([PILtoTorch(im, resolution) for im in image.split()[:3]], dim=0)
@@ -63,9 +62,9 @@ def process_image(image_path, depth_path, resolution, ncc_scale):
             ncc_resolution = (int(resolution[0]/ncc_scale), int(resolution[1]/ncc_scale))
             resized_image_rgb = PILtoTorch(image, ncc_resolution)
     gray_image = (0.299 * resized_image_rgb[0] + 0.587 * resized_image_rgb[1] + 0.114 * resized_image_rgb[2])[None]
-    depth_image = cv2.resize(invdepthmap, resolution)
+    depth_image = cv2.resize(depth_map, resolution)
     depth_image = torch.Tensor(depth_image).unsqueeze(0)
-    # depth_image = PILtoTorch(invdepthmap, resolution)
+    # depth_image = PILtoTorch(depth_map, resolution)
     return gt_image, gray_image, loaded_mask, depth_image
 
 class Camera(nn.Module):
@@ -107,14 +106,14 @@ class Camera(nn.Module):
         self.ncc_scale = ncc_scale
         if self.preload_img:
             gt_image, gray_image, loaded_mask, inv_depth_image = process_image(self.image_path, self.depth_path, self.resolution, ncc_scale)
-            self.invdepthmap = None
+            self.depth_map = None
             self.depth_reliable = False
             if inv_depth_image is not None:
-                self.invdepthmap = inv_depth_image
-                self.invdepthmap[self.invdepthmap < 0] = 0
+                self.depth_map = inv_depth_image
+                self.depth_map[self.depth_map < 0] = 0
                 self.depth_reliable = True
 
-                self.invdepthmap = self.invdepthmap.to(self.data_device)
+                self.depth_map = self.depth_map.to(self.data_device)
 
             self.original_image = gt_image.to(self.data_device)
             self.original_image_gray = gray_image.to(self.data_device)

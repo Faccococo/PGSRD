@@ -217,7 +217,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
             depth_weight = dn_l1_weight * 30
             normal_weight = dn_l1_weight
             
-            depth_metric = viewpoint_cam.invdepthmap.cuda()
+            depth_metric = viewpoint_cam.depth_map.cuda()
                         
             # LSimDepth = (1.0 - ssim(depth, mono_invdepth))
             # loss += weight * (0.5 * LSimDepth + 0.5 * Ll1depth_pure)
@@ -240,7 +240,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
             debug_tensor["normal"] = depth_normal_gt
             
             # Depth-loss
-            depth = 1.0 / (render_pkg["plane_depth"] + 0.5)
+            depth = render_pkg["plane_depth"]
             min_non_zero = depth[depth != 0].min()
             depth[depth == 0] = min_non_zero
             depth = normalize(depth)
