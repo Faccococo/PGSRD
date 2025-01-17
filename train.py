@@ -217,7 +217,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
             depth_weight = dn_l1_weight * 30
             normal_weight = dn_l1_weight
             
-            depth_metric = viewpoint_cam.depth_map.cuda()
+            depth_metric = viewpoint_cam.depthmap.cuda()
                         
             # LSimDepth = (1.0 - ssim(depth, mono_invdepth))
             # loss += weight * (0.5 * LSimDepth + 0.5 * Ll1depth_pure)
